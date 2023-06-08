@@ -187,7 +187,20 @@ func (a *AppleDevice) signature(deviceID string, appleDeveloper *model.AppleDeve
 		Kid: appleDeveloper.Kid,
 	}
 	profileUUID := uuid.New().String()
-	profileResponse, err := authorize.CreateProfile(profileUUID, appleDeveloper.BundleIds, appleDeveloper.CerID, deviceID)
+
+	// update for bundleID capacities problem
+	// try ipa bundlerID first, if no such one, try developer wildcard one
+	var bundleID string = ""
+	if appleIPA.BundleIdentifier != "*" {
+		bundleIds, err := authorize.GetBundleIdsByIdentifier(appleIPA.BundleIdentifier)
+		if err != nil {
+			bundleID = bundleIds
+		} else {
+			bundleID = appleDeveloper.BundleIds
+		}
+	}
+
+	profileResponse, err := authorize.CreateProfile(profileUUID, bundleID, appleDeveloper.CerID, deviceID)
 	if err != nil {
 		return "", err
 	}
